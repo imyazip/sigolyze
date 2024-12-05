@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/cloudflare/ahocorasick"
 	json "github.com/json-iterator/go"
 )
 
@@ -24,6 +25,7 @@ type Signature struct {
 	Patterns []Pattern  `json:"patterns"`
 	Tags     []string   `json:"tags"`
 	Meta     []MetaInfo `json:"meta"`
+	Matcher  *ahocorasick.Matcher
 }
 
 type Compiler struct {
@@ -51,6 +53,7 @@ func (s *Signature) NewSignature(name string, patterns []Pattern, tags []string,
 		Patterns: patterns,
 		Tags:     tags,
 		Meta:     meta,
+		Matcher:  nil,
 	}
 }
 
@@ -60,7 +63,15 @@ func NewCompiler() *Compiler {
 
 func (c *Compiler) LoadSignature(data []byte) error {
 	var sign Signature
-	err := json.Unmarshal(data, &sign)
+	err := json.Unmarshal(data, &sign) //Десериализуем json
+
+	//Строим массив знаений паттернов и инициализируем ahocorasik.Matcher для него
+	patternsValues := []string{}
+	for _, pattern := range sign.Patterns {
+		patternsValues = append(patternsValues, pattern.Value)
+	}
+
+	sign.Matcher = ahocorasick.NewStringMatcher(patternsValues)
 	c.Signatures = append(c.Signatures, sign)
 	if err != nil {
 		return err
@@ -96,7 +107,7 @@ func Match(compiler *Compiler, data string) []*Signature {
 	return result
 }
 
-func matchBySigns(signatures []*Signature, data string) []*Signature {
+func signsByTag(signatures []*Signature, data string) []*Signature {
 	var result []*Signature
 	for signIndex := range signatures {
 		for patternIndex := range signatures[signIndex].Patterns {
@@ -117,10 +128,23 @@ func MatchTags(compiler *Compiler, data string, tags []string) []*Signature {
 			for _, tag2 := range compiler.Signatures[signIndex].Tags {
 				if tag1 == tag2 {
 					taggedSignatures = append(taggedSignatures, &compiler.Signatures[signIndex])
+					break
 				}
 			}
 		}
 	}
-	return matchBySigns(taggedSignatures, data)
 
+	return signsByTag(taggedSignatures, data)
+}
+
+func MatchAho(compiler *Compiler, data string) []*Signature {
+	var result []*Signature
+	for signIndex := range compiler.Signatures {
+		if compiler.Signatures[signIndex].Matcher.Match([]byte(data)) != nil {
+			result = append(result, &compiler.Signatures[signIndex])
+		}
+
+	}
+
+	return result
 }
