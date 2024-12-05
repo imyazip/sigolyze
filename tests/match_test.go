@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/imyazip/sigolyze"
 )
 
 func generateSignatures(count int) [][]byte {
-	rand.Seed(time.Now().UnixNano()) // Инициализация случайного генератора
+	rand.New(rand.NewSource(42))
 
 	var signatures [][]byte
 	for i := 0; i < count; i++ {
@@ -26,17 +25,6 @@ func generateSignatures(count int) [][]byte {
 		signatures = append(signatures, []byte(patterns))
 	}
 	return signatures
-}
-
-func setupCompiler(numSignatures int) *sigolyze.Compiler {
-	compiler := sigolyze.NewCompiler()
-	signatures := generateSignatures(numSignatures)
-
-	for _, sig := range signatures {
-		_ = compiler.LoadSignature(sig) // Игнорируем ошибки для простоты
-	}
-
-	return compiler
 }
 
 func TestMatch(t *testing.T) {
@@ -74,11 +62,23 @@ func TestMatchTags(t *testing.T) {
 
 func TestMatchTagsAho(t *testing.T) {
 	compiler := sigolyze.NewCompiler()
-	compiler.LoadSignatureFromJson("example.json")
 
-	matches := sigolyze.MatchTagsAho(compiler, "Value1", []string{"tag1"})
+	// Пример данных
+	data := []byte(`
+        {
+            "name": "test_signature",
+            "patterns": [{"name": "pattern1", "value": "test1", "is_regex": false}],
+            "tags": ["tag1"],
+            "meta": []
+        }
+    `)
 
-	if matches[0] != &compiler.Signatures[0] {
+	if err := compiler.LoadSignature(data); err != nil {
+		t.Fatalf("Error loading signature: %v", err)
+	}
+
+	matches := sigolyze.MatchTagsAho(compiler, "test1", []string{"tag1"})
+	if len(matches) == 0 || matches[0] != &compiler.Signatures[0] {
 		t.Errorf("Failed matching")
 	}
 }
