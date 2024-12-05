@@ -28,6 +28,17 @@ func generateSignatures(count int) [][]byte {
 	return signatures
 }
 
+func setupCompiler(numSignatures int) *sigolyze.Compiler {
+	compiler := sigolyze.NewCompiler()
+	signatures := generateSignatures(numSignatures)
+
+	for _, sig := range signatures {
+		_ = compiler.LoadSignature(sig) // Игнорируем ошибки для простоты
+	}
+
+	return compiler
+}
+
 func TestMatch(t *testing.T) {
 	compiler := sigolyze.NewCompiler()
 	compiler.LoadSignatureFromJson("example.json")
@@ -61,6 +72,17 @@ func TestMatchTags(t *testing.T) {
 	}
 }
 
+func TestMatchTagsAho(t *testing.T) {
+	compiler := sigolyze.NewCompiler()
+	compiler.LoadSignatureFromJson("example.json")
+
+	matches := sigolyze.MatchTagsAho(compiler, "Value1", []string{"tag1"})
+
+	if matches[0] != &compiler.Signatures[0] {
+		t.Errorf("Failed matching")
+	}
+}
+
 func BenchmarkMatch(b *testing.B) {
 	compiler := sigolyze.NewCompiler()
 	signs := generateSignatures(100)
@@ -74,7 +96,7 @@ func BenchmarkMatch(b *testing.B) {
 	b.StopTimer()
 }
 
-func BenchmarkAho(b *testing.B) {
+func BenchmarkMatchAho(b *testing.B) {
 	compiler := sigolyze.NewCompiler()
 	signs := generateSignatures(100)
 	for _, sign := range signs {
@@ -85,4 +107,36 @@ func BenchmarkAho(b *testing.B) {
 		sigolyze.MatchAho(compiler, "Value1")
 	}
 	b.StopTimer()
+}
+
+func BenchmarkMatchTags(b *testing.B) {
+	compiler := sigolyze.NewCompiler()
+	signs := generateSignatures(100)
+	for _, sign := range signs {
+		compiler.LoadSignature(sign)
+	}
+
+	data := "test0_1 test10_3 test20_2" // Данные для поиска
+	tags := []string{"tag1"}            // Теги для фильтрации
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = sigolyze.MatchTags(compiler, data, tags)
+	}
+}
+
+func BenchmarkMatchTagsAho(b *testing.B) {
+	compiler := sigolyze.NewCompiler()
+	signs := generateSignatures(100)
+	for _, sign := range signs {
+		compiler.LoadSignature(sign)
+	}
+
+	data := "test0_1 test10_3 test20_2" // Данные для поиска
+	tags := []string{"tag1"}            // Теги для фильтрации
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = sigolyze.MatchTagsAho(compiler, data, tags)
+	}
 }

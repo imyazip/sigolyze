@@ -107,6 +107,46 @@ func Match(compiler *Compiler, data string) []*Signature {
 	return result
 }
 
+func MatchAho(compiler *Compiler, data string) []*Signature {
+	var result []*Signature
+	for signIndex := range compiler.Signatures {
+		if compiler.Signatures[signIndex].Matcher.Match([]byte(data)) != nil {
+			result = append(result, &compiler.Signatures[signIndex])
+		}
+	}
+
+	return result
+}
+
+func signsByTagAho(signatures []*Signature, data string) []*Signature {
+	var result []*Signature
+	for signIndex := range signatures {
+		if signatures[signIndex].Matcher.Match([]byte(data)) != nil {
+			result = append(result, signatures[signIndex])
+		}
+	}
+
+	return result
+}
+
+func MatchTagsAho(compiler *Compiler, data string, tags []string) []*Signature {
+	var taggedSignatures []*Signature //Массив сигнатур с указанными тегами
+
+	//Формируем массив сигнатур с указанными тегами
+	for signIndex := range compiler.Signatures {
+		for _, tag1 := range tags {
+			for _, tag2 := range compiler.Signatures[signIndex].Tags {
+				if tag1 == tag2 {
+					taggedSignatures = append(taggedSignatures, &compiler.Signatures[signIndex])
+					break
+				}
+			}
+		}
+	}
+
+	return signsByTagAho(taggedSignatures, data)
+}
+
 func signsByTag(signatures []*Signature, data string) []*Signature {
 	var result []*Signature
 	for signIndex := range signatures {
@@ -123,6 +163,7 @@ func signsByTag(signatures []*Signature, data string) []*Signature {
 func MatchTags(compiler *Compiler, data string, tags []string) []*Signature {
 	var taggedSignatures []*Signature //Массив сигнатур с указанными тегами
 
+	//Формируем массив сигнатур с указанными тегами
 	for signIndex := range compiler.Signatures {
 		for _, tag1 := range tags {
 			for _, tag2 := range compiler.Signatures[signIndex].Tags {
@@ -135,16 +176,4 @@ func MatchTags(compiler *Compiler, data string, tags []string) []*Signature {
 	}
 
 	return signsByTag(taggedSignatures, data)
-}
-
-func MatchAho(compiler *Compiler, data string) []*Signature {
-	var result []*Signature
-	for signIndex := range compiler.Signatures {
-		if compiler.Signatures[signIndex].Matcher.Match([]byte(data)) != nil {
-			result = append(result, &compiler.Signatures[signIndex])
-		}
-
-	}
-
-	return result
 }
