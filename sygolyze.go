@@ -3,6 +3,7 @@ package sigolyze
 import (
 	"io"
 	"os"
+	"strings"
 
 	json "github.com/json-iterator/go"
 )
@@ -80,4 +81,17 @@ func (c *Compiler) LoadSignatureFromJson(path string) error {
 	}
 	c.LoadSignature(data)
 	return nil
+}
+
+func Match(compiler *Compiler, data string) []*Signature {
+	var result []*Signature
+	for signIndex := range compiler.Signatures {
+		for patternIndex := range compiler.Signatures[signIndex].Patterns {
+			if strings.Contains(data, compiler.Signatures[signIndex].Patterns[patternIndex].Value) {
+				result = append(result, &compiler.Signatures[signIndex])
+			}
+		}
+	}
+
+	return result
 }
