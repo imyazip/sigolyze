@@ -37,7 +37,7 @@ var signs string = `
 
 func TestLoadRules(t *testing.T) {
 	compiler := sigolyze.NewCompiler()
-	compiler.LoadRules([]byte(signs))
+	compiler.LoadSignature([]byte(signs))
 	expectedPatterns := []sigolyze.Pattern{
 		{
 			Name:    "Pattern 1",
@@ -60,26 +60,26 @@ func TestLoadRules(t *testing.T) {
 	}
 
 	for index := range expectedPatterns {
-		if expectedPatterns[index].Name != compiler.Signatures.Patterns[index].Name {
+		if expectedPatterns[index].Name != compiler.Signatures[0].Patterns[index].Name {
 			t.Errorf("Failed loading pattern names")
 		}
 
-		if expectedPatterns[index].Value != compiler.Signatures.Patterns[index].Value {
+		if expectedPatterns[index].Value != compiler.Signatures[0].Patterns[index].Value {
 			t.Errorf("Failed loading pattern values")
 		}
 
-		if expectedPatterns[index].IsRegex != compiler.Signatures.Patterns[index].IsRegex {
+		if expectedPatterns[index].IsRegex != compiler.Signatures[0].Patterns[index].IsRegex {
 			t.Errorf("Failed loading pattern values")
 		}
 	}
 
 	for index := range expectedMeta {
-		if expectedMeta[index].Name != compiler.Signatures.Meta[index].Name {
+		if expectedMeta[index].Name != compiler.Signatures[0].Meta[index].Name {
 			t.Error("Failed loading metadata names")
 		}
 
 		for metaIndex := range expectedMeta[index].Info {
-			if expectedMeta[index].Info[metaIndex] != compiler.Signatures.Meta[index].Info[metaIndex] {
+			if expectedMeta[index].Info[metaIndex] != compiler.Signatures[0].Meta[index].Info[metaIndex] {
 				t.Error("Failed loading metadata info")
 			}
 		}

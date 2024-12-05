@@ -26,7 +26,7 @@ type Signature struct {
 }
 
 type Compiler struct {
-	Signatures Signature
+	Signatures []Signature
 }
 
 func (p *Pattern) NewPattern(name string, value string, isRegex bool) *Pattern {
@@ -57,15 +57,17 @@ func NewCompiler() *Compiler {
 	return &Compiler{}
 }
 
-func (c *Compiler) LoadRules(data []byte) error {
-	err := json.Unmarshal(data, &c.Signatures)
+func (c *Compiler) LoadSignature(data []byte) error {
+	var sign Signature
+	err := json.Unmarshal(data, &sign)
+	c.Signatures = append(c.Signatures, sign)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *Compiler) LoadRulesFromJson(path string) error {
+func (c *Compiler) LoadSignatureFromJson(path string) error {
 	file, err := os.Open(path)
 	if err != nil {
 		return err
@@ -76,6 +78,6 @@ func (c *Compiler) LoadRulesFromJson(path string) error {
 	if err != nil {
 		return err
 	}
-	c.LoadRules(data)
+	c.LoadSignature(data)
 	return nil
 }
