@@ -1,4 +1,6 @@
 # sigolyze
+[![Go](https://github.com/imyazip/sigolyze/actions/workflows/tests.yml/badge.svg)](https://github.com/imyazip/sigolyze/actions/workflows/tests.yml)
+
 Signature based anlysis library for golang
 
 ## Signature example
