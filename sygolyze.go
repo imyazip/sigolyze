@@ -95,3 +95,32 @@ func Match(compiler *Compiler, data string) []*Signature {
 
 	return result
 }
+
+func matchBySigns(signatures []*Signature, data string) []*Signature {
+	var result []*Signature
+	for signIndex := range signatures {
+		for patternIndex := range signatures[signIndex].Patterns {
+			if strings.Contains(data, signatures[signIndex].Patterns[patternIndex].Value) {
+				result = append(result, signatures[signIndex])
+			}
+		}
+	}
+
+	return result
+}
+
+func MatchTags(compiler *Compiler, data string, tags []string) []*Signature {
+	var taggedSignatures []*Signature //Массив сигнатур с указанными тегами
+
+	for signIndex := range compiler.Signatures {
+		for _, tag1 := range tags {
+			for _, tag2 := range compiler.Signatures[signIndex].Tags {
+				if tag1 == tag2 {
+					taggedSignatures = append(taggedSignatures, &compiler.Signatures[signIndex])
+				}
+			}
+		}
+	}
+	return matchBySigns(taggedSignatures, data)
+
+}
