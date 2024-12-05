@@ -1,6 +1,9 @@
 package sigolyze
 
 import (
+	"io"
+	"os"
+
 	json "github.com/json-iterator/go"
 )
 
@@ -54,10 +57,25 @@ func NewCompiler() *Compiler {
 	return &Compiler{}
 }
 
-func (c *Compiler) LoadRules(jsonString string) error {
-	err := json.Unmarshal([]byte(jsonString), &c.Signatures)
+func (c *Compiler) LoadRules(data []byte) error {
+	err := json.Unmarshal(data, &c.Signatures)
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (c *Compiler) LoadRulesFromJson(path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		return err
+	}
+	c.LoadRules(data)
 	return nil
 }
