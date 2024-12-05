@@ -59,7 +59,7 @@ func TestLoadRules(t *testing.T) {
 		},
 	}
 
-	for index, _ := range expectedPatterns {
+	for index := range expectedPatterns {
 		if expectedPatterns[index].Name != compiler.Signatures.Patterns[index].Name {
 			t.Errorf("Failed loading pattern names")
 		}
@@ -73,12 +73,12 @@ func TestLoadRules(t *testing.T) {
 		}
 	}
 
-	for index, _ := range expectedMeta {
+	for index := range expectedMeta {
 		if expectedMeta[index].Name != compiler.Signatures.Meta[index].Name {
 			t.Error("Failed loading metadata names")
 		}
 
-		for metaIndex, _ := range expectedMeta[index].Info {
+		for metaIndex := range expectedMeta[index].Info {
 			if expectedMeta[index].Info[metaIndex] != compiler.Signatures.Meta[index].Info[metaIndex] {
 				t.Error("Failed loading metadata info")
 			}
