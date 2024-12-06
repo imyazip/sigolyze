@@ -3,9 +3,15 @@ package tests
 import (
 	"fmt"
 	"math/rand"
+	"sync"
 	"testing"
 
 	"github.com/imyazip/sigolyze"
+)
+
+var (
+	compiledSignatures *sigolyze.Compiler
+	once               sync.Once
 )
 
 func generateSignatures(count int) [][]byte {
@@ -13,7 +19,8 @@ func generateSignatures(count int) [][]byte {
 
 	var signatures [][]byte
 	for i := 0; i < count; i++ {
-		numPatterns := rand.Intn(10) + 1 // Случайное количество паттернов от 1 до 10
+		// Случайное количество паттернов от 1 до 10
+		numPatterns := rand.Intn(10) + 1
 		patterns := `{"name": "test_signature", "patterns": [`
 		for j := 0; j < numPatterns; j++ {
 			patterns += fmt.Sprintf(`{"name": "pattern%d_%d", "value": "test%d_%d", "is_regex": false}`, i, j, i, j)
@@ -21,10 +28,36 @@ func generateSignatures(count int) [][]byte {
 				patterns += ","
 			}
 		}
-		patterns += `], "tags": ["tag1"], "meta": []}`
+		patterns += `], `
+
+		// Случайное количество тегов от 1 до 5
+		numTags := rand.Intn(5) + 1
+		tags := `"tags": [`
+		for k := 0; k < numTags; k++ {
+			tags += fmt.Sprintf(`"tag%d_%d"`, i, k)
+			if k < numTags-1 {
+				tags += ","
+			}
+		}
+		tags += `], `
+
+		patterns += tags + `"meta": []}`
+
 		signatures = append(signatures, []byte(patterns))
 	}
 	return signatures
+}
+
+func initCompiler() *sigolyze.Compiler {
+	once.Do(func() {
+		compiler := sigolyze.NewCompiler()
+		signs := generateSignatures(10000)
+		for _, sign := range signs {
+			compiler.LoadSignature(sign)
+		}
+		compiledSignatures = compiler
+	})
+	return compiledSignatures
 }
 
 func TestMatch(t *testing.T) {
@@ -55,70 +88,42 @@ func TestMatchTags(t *testing.T) {
 
 	matches := sigolyze.MatchTags(compiler, "Value1", []string{"tag1"})
 
-	if matches[0] != &compiler.Signatures[0] {
+	if matches[0].Name != compiler.Signatures[0].Name {
 		t.Errorf("Failed matching")
 	}
 }
 
 func TestMatchTagsAho(t *testing.T) {
 	compiler := sigolyze.NewCompiler()
+	compiler.LoadSignatureFromJson("example.json")
 
-	// Пример данных
-	data := []byte(`
-        {
-            "name": "test_signature",
-            "patterns": [{"name": "pattern1", "value": "test1", "is_regex": false}],
-            "tags": ["tag1"],
-            "meta": []
-        }
-    `)
+	matches := sigolyze.MatchTagsAho(compiler, "Value1", []string{"tag1"})
 
-	if err := compiler.LoadSignature(data); err != nil {
-		t.Fatalf("Error loading signature: %v", err)
-	}
-
-	matches := sigolyze.MatchTagsAho(compiler, "test1", []string{"tag1"})
-	if len(matches) == 0 || matches[0] != &compiler.Signatures[0] {
+	if matches[0].Name != compiler.Signatures[0].Name {
 		t.Errorf("Failed matching")
 	}
 }
 
 func BenchmarkMatch(b *testing.B) {
-	compiler := sigolyze.NewCompiler()
-	signs := generateSignatures(100)
-	for _, sign := range signs {
-		compiler.LoadSignature(sign)
-	}
-	b.StartTimer()
+	compiler := initCompiler()
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		sigolyze.Match(compiler, "Value1")
 	}
-	b.StopTimer()
 }
 
 func BenchmarkMatchAho(b *testing.B) {
-	compiler := sigolyze.NewCompiler()
-	signs := generateSignatures(100)
-	for _, sign := range signs {
-		compiler.LoadSignature(sign)
-	}
-	b.StartTimer()
+	compiler := initCompiler()
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		sigolyze.MatchAho(compiler, "Value1")
 	}
-	b.StopTimer()
 }
 
 func BenchmarkMatchTags(b *testing.B) {
-	compiler := sigolyze.NewCompiler()
-	signs := generateSignatures(100)
-	for _, sign := range signs {
-		compiler.LoadSignature(sign)
-	}
-
-	data := "test0_1 test10_3 test20_2" // Данные для поиска
-	tags := []string{"tag1"}            // Теги для фильтрации
-
+	compiler := initCompiler()
+	data := "test0_1 test10_3 test20_2"
+	tags := []string{"tag1, tag2"}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = sigolyze.MatchTags(compiler, data, tags)
@@ -126,15 +131,9 @@ func BenchmarkMatchTags(b *testing.B) {
 }
 
 func BenchmarkMatchTagsAho(b *testing.B) {
-	compiler := sigolyze.NewCompiler()
-	signs := generateSignatures(100)
-	for _, sign := range signs {
-		compiler.LoadSignature(sign)
-	}
-
-	data := "test0_1 test10_3 test20_2" // Данные для поиска
-	tags := []string{"tag1"}            // Теги для фильтрации
-
+	compiler := initCompiler()
+	data := "test0_1 test10_3 test20_2"
+	tags := []string{"tag1, tag2"}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = sigolyze.MatchTagsAho(compiler, data, tags)

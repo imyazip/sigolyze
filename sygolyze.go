@@ -29,7 +29,8 @@ type Signature struct {
 }
 
 type Compiler struct {
-	Signatures []Signature
+	Signatures      []Signature
+	SignaturesByTag map[string][]*Signature
 }
 
 func (p *Pattern) NewPattern(name string, value string, isRegex bool) *Pattern {
@@ -58,7 +59,9 @@ func (s *Signature) NewSignature(name string, patterns []Pattern, tags []string,
 }
 
 func NewCompiler() *Compiler {
-	return &Compiler{}
+	return &Compiler{
+		SignaturesByTag: make(map[string][]*Signature),
+	}
 }
 
 func (c *Compiler) LoadSignature(data []byte) error {
@@ -73,6 +76,10 @@ func (c *Compiler) LoadSignature(data []byte) error {
 
 	sign.Matcher = ahocorasick.NewStringMatcher(patternsValues)
 	c.Signatures = append(c.Signatures, sign)
+
+	for _, tag := range sign.Tags {
+		c.SignaturesByTag[tag] = append(c.SignaturesByTag[tag], &sign)
+	}
 	if err != nil {
 		return err
 	}
@@ -92,6 +99,27 @@ func (c *Compiler) LoadSignatureFromJson(path string) error {
 	}
 	c.LoadSignature(data)
 	return nil
+}
+
+func GetSignaturesByTags(compiler *Compiler, tags []string) []*Signature {
+	signatureSet := make(map[*Signature]struct{}) // Используем map для уникальности сигнатур
+
+	// Ищем сигнатуры по каждому тегу
+	for _, tag := range tags {
+		if signatures, exists := compiler.SignaturesByTag[tag]; exists {
+			for _, signature := range signatures {
+				signatureSet[signature] = struct{}{} // Добавляем в set
+			}
+		}
+	}
+
+	// Преобразуем set в массив
+	var result []*Signature
+	for signature := range signatureSet {
+		result = append(result, signature)
+	}
+
+	return result
 }
 
 func Match(compiler *Compiler, data string) []*Signature {
@@ -130,21 +158,7 @@ func signsByTagAho(signatures []*Signature, data string) []*Signature {
 }
 
 func MatchTagsAho(compiler *Compiler, data string, tags []string) []*Signature {
-	var taggedSignatures []*Signature //Массив сигнатур с указанными тегами
-
-	//Формируем массив сигнатур с указанными тегами
-	for signIndex := range compiler.Signatures {
-		for _, tag1 := range tags {
-			for _, tag2 := range compiler.Signatures[signIndex].Tags {
-				if tag1 == tag2 {
-					taggedSignatures = append(taggedSignatures, &compiler.Signatures[signIndex])
-					break
-				}
-			}
-		}
-	}
-
-	return signsByTagAho(taggedSignatures, data)
+	return signsByTagAho(GetSignaturesByTags(compiler, tags), data)
 }
 
 func signsByTag(signatures []*Signature, data string) []*Signature {
@@ -161,19 +175,5 @@ func signsByTag(signatures []*Signature, data string) []*Signature {
 }
 
 func MatchTags(compiler *Compiler, data string, tags []string) []*Signature {
-	var taggedSignatures []*Signature //Массив сигнатур с указанными тегами
-
-	//Формируем массив сигнатур с указанными тегами
-	for signIndex := range compiler.Signatures {
-		for _, tag1 := range tags {
-			for _, tag2 := range compiler.Signatures[signIndex].Tags {
-				if tag1 == tag2 {
-					taggedSignatures = append(taggedSignatures, &compiler.Signatures[signIndex])
-					break
-				}
-			}
-		}
-	}
-
-	return signsByTag(taggedSignatures, data)
+	return signsByTag(GetSignaturesByTags(compiler, tags), data)
 }
