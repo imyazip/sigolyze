@@ -75,7 +75,7 @@ func TestMatchAho(t *testing.T) {
 	compiler := sigolyze.NewCompiler()
 	compiler.LoadSignatureFromJson("example.json")
 
-	matches := sigolyze.MatchAho(compiler, "Value1")
+	matches := sigolyze.MatchAho(compiler, "Value1 Value2 Value3 Value12")
 
 	if matches[0] != &compiler.Signatures[0] {
 		t.Errorf("Failed matching")
@@ -86,7 +86,7 @@ func TestMatchTags(t *testing.T) {
 	compiler := sigolyze.NewCompiler()
 	compiler.LoadSignatureFromJson("example.json")
 
-	matches := sigolyze.MatchTags(compiler, "Value1", []string{"tag1"})
+	matches := sigolyze.MatchTags(compiler, "Value1 Value2 Value3 Value12", []string{"tag1"})
 
 	if matches[0].Name != compiler.Signatures[0].Name {
 		t.Errorf("Failed matching")
@@ -108,7 +108,7 @@ func BenchmarkMatch(b *testing.B) {
 	compiler := initCompiler()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		sigolyze.Match(compiler, "Value1")
+		sigolyze.Match(compiler, "Value1 Value2 Value3 Value12")
 	}
 }
 
@@ -116,13 +116,13 @@ func BenchmarkMatchAho(b *testing.B) {
 	compiler := initCompiler()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		sigolyze.MatchAho(compiler, "Value1")
+		sigolyze.MatchAho(compiler, "Value1 Value2 Value3 Value12")
 	}
 }
 
 func BenchmarkMatchTags(b *testing.B) {
 	compiler := initCompiler()
-	data := "test0_1 test10_3 test20_2"
+	data := "Value1 Value2 Value3 Value12"
 	tags := []string{"tag1, tag2"}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -132,7 +132,7 @@ func BenchmarkMatchTags(b *testing.B) {
 
 func BenchmarkMatchTagsAho(b *testing.B) {
 	compiler := initCompiler()
-	data := "test0_1 test10_3 test20_2"
+	data := "Value1 Value2 Value3 Value12"
 	tags := []string{"tag1, tag2"}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
