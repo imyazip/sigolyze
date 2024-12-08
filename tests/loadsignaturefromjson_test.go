@@ -12,13 +12,13 @@ func TestLoadRulesFromJson(t *testing.T) {
 	expectedPatterns := []sigolyze.Pattern{
 		{
 			Name:    "Pattern 1",
-			Value:   "Value1",
+			Value:   "Value",
 			IsRegex: false,
 		},
 		{
 			Name:    "Pattern 2",
-			Value:   "Value2",
-			IsRegex: false,
+			Value:   "regex[0-9]",
+			IsRegex: true,
 		},
 	}
 	expectedMeta := []sigolyze.MetaInfo{
