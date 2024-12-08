@@ -16,7 +16,7 @@
 To install the `sigolyze` package, use the Go module system:
 
 ```bash
-go get github.com/yourusername/sigolyze
+go get github.com/imyazip/sigolyze
 ```
 
 ## Usage
