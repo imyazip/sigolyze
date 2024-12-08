@@ -1,8 +1,10 @@
 package sigolyze
 
 import (
+	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/cloudflare/ahocorasick"
@@ -21,11 +23,12 @@ type MetaInfo struct {
 }
 
 type Signature struct {
-	Name     string     `json:"name"`
-	Patterns []Pattern  `json:"patterns"`
-	Tags     []string   `json:"tags"`
-	Meta     []MetaInfo `json:"meta"`
-	Matcher  *ahocorasick.Matcher
+	Name            string     `json:"name"`
+	Patterns        []Pattern  `json:"patterns"`
+	Tags            []string   `json:"tags"`
+	Meta            []MetaInfo `json:"meta"`
+	Matcher         *ahocorasick.Matcher
+	regexpCompilers []*regexp.Regexp
 }
 
 type Compiler struct {
@@ -69,12 +72,24 @@ func (c *Compiler) LoadSignature(data []byte) error {
 	err := json.Unmarshal(data, &sign) //Десериализуем json
 
 	//Строим массив знаений паттернов и инициализируем ahocorasik.Matcher для него
-	patternsValues := []string{}
+	regexPatternsValues := []*regexp.Regexp{}
+	stringPatternsValues := []string{}
 	for _, pattern := range sign.Patterns {
-		patternsValues = append(patternsValues, pattern.Value)
+		if pattern.IsRegex {
+			compiled, err := regexp.Compile(pattern.Value)
+			if err != nil {
+				return fmt.Errorf("failed to parse regex pattern %s in signature %s. Error: %s", pattern.Value, sign.Name, err)
+			}
+			regexPatternsValues = append(regexPatternsValues, compiled)
+		} else {
+			stringPatternsValues = append(stringPatternsValues, pattern.Value)
+		}
+	}
+	for _, regexPattern := range regexPatternsValues {
+		sign.regexpCompilers = append(sign.regexpCompilers, regexPattern)
 	}
 
-	sign.Matcher = ahocorasick.NewStringMatcher(patternsValues)
+	sign.Matcher = ahocorasick.NewStringMatcher(stringPatternsValues)
 	c.Signatures = append(c.Signatures, sign)
 
 	for _, tag := range sign.Tags {

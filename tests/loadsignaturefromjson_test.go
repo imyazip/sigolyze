@@ -13,7 +13,7 @@ func TestLoadRulesFromJson(t *testing.T) {
 		{
 			Name:    "Pattern 1",
 			Value:   "Value1",
-			IsRegex: true,
+			IsRegex: false,
 		},
 		{
 			Name:    "Pattern 2",

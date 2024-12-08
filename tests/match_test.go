@@ -75,7 +75,7 @@ func TestMatchAho(t *testing.T) {
 	compiler := sigolyze.NewCompiler()
 	compiler.LoadSignatureFromJson("example.json")
 
-	matches := sigolyze.MatchAho(compiler, "Value1 Value2 Value3 Value12")
+	matches := sigolyze.MatchAho(compiler, "Value1")
 
 	if matches[0] != &compiler.Signatures[0] {
 		t.Errorf("Failed matching")

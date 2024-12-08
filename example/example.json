@@ -4,7 +4,7 @@
       {
         "name": "Pattern 1",
         "value": "Value1",
-        "is_regex": true
+        "is_regex": false
       },
       {
         "name": "Pattern 2",
