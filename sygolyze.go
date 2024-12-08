@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"regexp"
-	"strings"
 
 	"github.com/cloudflare/ahocorasick"
 	json "github.com/json-iterator/go"
@@ -140,9 +139,15 @@ func GetSignaturesByTags(compiler *Compiler, tags []string) []*Signature {
 func Match(compiler *Compiler, data string) []*Signature {
 	var result []*Signature
 	for signIndex := range compiler.Signatures {
-		for patternIndex := range compiler.Signatures[signIndex].Patterns {
-			if strings.Contains(data, compiler.Signatures[signIndex].Patterns[patternIndex].Value) {
-				result = append(result, &compiler.Signatures[signIndex])
+		if compiler.Signatures[signIndex].Matcher.Match([]byte(data)) != nil {
+			result = append(result, &compiler.Signatures[signIndex])
+		}
+
+		if len(compiler.Signatures[signIndex].regexpCompilers) != 0 {
+			for _, regex := range compiler.Signatures[signIndex].regexpCompilers {
+				if regex.Match([]byte(data)) {
+					result = append(result, &compiler.Signatures[signIndex])
+				}
 			}
 		}
 	}
@@ -150,38 +155,18 @@ func Match(compiler *Compiler, data string) []*Signature {
 	return result
 }
 
-func MatchAho(compiler *Compiler, data string) []*Signature {
-	var result []*Signature
-	for signIndex := range compiler.Signatures {
-		if compiler.Signatures[signIndex].Matcher.Match([]byte(data)) != nil {
-			result = append(result, &compiler.Signatures[signIndex])
-		}
-	}
-
-	return result
-}
-
-func signsByTagAho(signatures []*Signature, data string) []*Signature {
+func signsByTag(signatures []*Signature, data string) []*Signature {
 	var result []*Signature
 	for signIndex := range signatures {
 		if signatures[signIndex].Matcher.Match([]byte(data)) != nil {
 			result = append(result, signatures[signIndex])
 		}
-	}
 
-	return result
-}
-
-func MatchTagsAho(compiler *Compiler, data string, tags []string) []*Signature {
-	return signsByTagAho(GetSignaturesByTags(compiler, tags), data)
-}
-
-func signsByTag(signatures []*Signature, data string) []*Signature {
-	var result []*Signature
-	for signIndex := range signatures {
-		for patternIndex := range signatures[signIndex].Patterns {
-			if strings.Contains(data, signatures[signIndex].Patterns[patternIndex].Value) {
-				result = append(result, signatures[signIndex])
+		if len(signatures[signIndex].regexpCompilers) != 0 {
+			for _, regex := range signatures[signIndex].regexpCompilers {
+				if regex.Match([]byte(data)) {
+					result = append(result, signatures[signIndex])
+				}
 			}
 		}
 	}

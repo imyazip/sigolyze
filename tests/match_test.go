@@ -64,7 +64,7 @@ func TestMatch(t *testing.T) {
 	compiler := sigolyze.NewCompiler()
 	compiler.LoadSignatureFromJson("example.json")
 
-	matches := sigolyze.Match(compiler, "Value1")
+	matches := sigolyze.Match(compiler, "Value regex3")
 
 	if matches[0] != &compiler.Signatures[0] {
 		t.Errorf("Failed matching")

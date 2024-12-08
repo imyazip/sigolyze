@@ -3,13 +3,13 @@
     "patterns": [
       {
         "name": "Pattern 1",
-        "value": "Value1",
+        "value": "Value",
         "is_regex": false
       },
       {
         "name": "Pattern 2",
-        "value": "Value2",
-        "is_regex": false
+        "value": "regex[0-9]",
+        "is_regex": true
       }
     ],
     "tags": ["tag1", "tag2"],
