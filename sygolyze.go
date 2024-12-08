@@ -1,3 +1,4 @@
+// Package sigolyze provides interface to quick signature-based substring searching.
 package sigolyze
 
 import (
@@ -21,6 +22,7 @@ type MetaInfo struct {
 	Info []string `json:"info"`
 }
 
+// Signature contains pre-compiled ahocorasick mather and regex strings as well as some metainforamtion to define signature.
 type Signature struct {
 	Name            string     `json:"name"`
 	Patterns        []Pattern  `json:"patterns"`
@@ -30,6 +32,7 @@ type Signature struct {
 	regexpCompilers []*regexp.Regexp
 }
 
+// Compiler stores all pre-compiled signatures
 type Compiler struct {
 	Signatures      []Signature
 	SignaturesByTag map[string][]*Signature
@@ -60,12 +63,14 @@ func (s *Signature) NewSignature(name string, patterns []Pattern, tags []string,
 	}
 }
 
+// NewCompiler is a Compiler constructor
 func NewCompiler() *Compiler {
 	return &Compiler{
 		SignaturesByTag: make(map[string][]*Signature),
 	}
 }
 
+// LoadSignature loads new signature to compiler and compiles it
 func (c *Compiler) LoadSignature(data []byte) error {
 	var sign Signature
 	err := json.Unmarshal(data, &sign) //Десериализуем json
@@ -84,9 +89,7 @@ func (c *Compiler) LoadSignature(data []byte) error {
 			stringPatternsValues = append(stringPatternsValues, pattern.Value)
 		}
 	}
-	for _, regexPattern := range regexPatternsValues {
-		sign.regexpCompilers = append(sign.regexpCompilers, regexPattern)
-	}
+	sign.regexpCompilers = append(sign.regexpCompilers, regexPatternsValues...)
 
 	sign.Matcher = ahocorasick.NewStringMatcher(stringPatternsValues)
 	c.Signatures = append(c.Signatures, sign)
@@ -100,6 +103,7 @@ func (c *Compiler) LoadSignature(data []byte) error {
 	return nil
 }
 
+// LoadSignatureFromJson is warpper around LoadSignatureFrom to load signature from .json file
 func (c *Compiler) LoadSignatureFromJson(path string) error {
 	file, err := os.Open(path)
 	if err != nil {
@@ -115,7 +119,8 @@ func (c *Compiler) LoadSignatureFromJson(path string) error {
 	return nil
 }
 
-func GetSignaturesByTags(compiler *Compiler, tags []string) []*Signature {
+// GetSignaturesByTags returns compiler's signatures with givern tags.
+func getSignaturesByTags(compiler *Compiler, tags []string) []*Signature {
 	signatureSet := make(map[*Signature]struct{}) // Используем map для уникальности сигнатур
 
 	// Ищем сигнатуры по каждому тегу
@@ -136,6 +141,8 @@ func GetSignaturesByTags(compiler *Compiler, tags []string) []*Signature {
 	return result
 }
 
+// Match searches matches in given data with all compiler's signatures.
+// It returns all matched signatures.
 func Match(compiler *Compiler, data string) []*Signature {
 	var result []*Signature
 	for signIndex := range compiler.Signatures {
@@ -155,7 +162,9 @@ func Match(compiler *Compiler, data string) []*Signature {
 	return result
 }
 
-func signsByTag(signatures []*Signature, data string) []*Signature {
+// matchesByTag searches matches in given data with given signatures.
+// It returns all matched signatures.
+func matchesByTag(signatures []*Signature, data string) []*Signature {
 	var result []*Signature
 	for signIndex := range signatures {
 		if signatures[signIndex].Matcher.Match([]byte(data)) != nil {
@@ -174,6 +183,8 @@ func signsByTag(signatures []*Signature, data string) []*Signature {
 	return result
 }
 
+// MatchTags searches matches in given data with exact tagged compiler's signatures.
+// It returns all matched signatures.
 func MatchTags(compiler *Compiler, data string, tags []string) []*Signature {
-	return signsByTag(GetSignaturesByTags(compiler, tags), data)
+	return matchesByTag(getSignaturesByTags(compiler, tags), data)
 }
