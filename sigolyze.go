@@ -1,5 +1,5 @@
 // Package sigolyze provides interface to quick signature-based substring searching.
-package main
+package sigolyze
 
 import (
 	"fmt"
